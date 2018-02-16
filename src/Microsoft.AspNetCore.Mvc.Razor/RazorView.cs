@@ -25,6 +25,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         private readonly IRazorPageActivator _pageActivator;
         private readonly HtmlEncoder _htmlEncoder;
         private readonly DiagnosticSource _diagnosticSource;
+        private IPropertyLifetimeThingie _propertyLifetimeThingie;
+        private PropertyLifetimeContext _propertyLifetimeContext;
         private IViewBufferScope _bufferScope;
 
         /// <summary>
@@ -104,11 +106,15 @@ namespace Microsoft.AspNetCore.Mvc.Razor
                 throw new ArgumentNullException(nameof(context));
             }
 
+            _propertyLifetimeContext = new PropertyLifetimeContext(context.TempData, context.ViewData);
+
             // This GetRequiredService call is by design. ViewBufferScope is a scoped service, RazorViewEngine
             // is the component responsible for creating RazorViews and it is a Singleton service. It doesn't
             // have access to the RequestServices so requiring the service when we render the page is the best
             // we can do.
             _bufferScope = context.HttpContext.RequestServices.GetRequiredService<IViewBufferScope>();
+            _propertyLifetimeThingie = context.HttpContext.RequestServices.GetRequiredService<IPropertyLifetimeThingie>();
+
             var bodyWriter = await RenderPageAsync(RazorPage, context, invokeViewStarts: true);
             await RenderLayoutAsync(context, bodyWriter);
         }
@@ -166,6 +172,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         {
             page.ViewContext = context;
             _pageActivator.Activate(page, context);
+            _propertyLifetimeThingie.Init(page, _propertyLifetimeContext);
 
             _diagnosticSource.BeforeViewPage(page, context);
 
@@ -177,6 +184,8 @@ namespace Microsoft.AspNetCore.Mvc.Razor
             {
                 _diagnosticSource.AfterViewPage(page, context);
             }
+
+            _propertyLifetimeThingie.Save(page, _propertyLifetimeContext);
         }
 
         private async Task RenderViewStartsAsync(ViewContext context)

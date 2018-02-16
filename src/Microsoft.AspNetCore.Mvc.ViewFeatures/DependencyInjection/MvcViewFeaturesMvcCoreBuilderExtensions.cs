@@ -219,6 +219,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<ITempDataDictionaryFactory, TempDataDictionaryFactory>();
             services.TryAddSingleton(ArrayPool<ViewBufferValue>.Shared);
             services.TryAddScoped<IViewBufferScope, MemoryPoolViewBufferScope>();
+
+            services.TryAddScoped<IPropertyLifetimeThingie, PropertyLifetimeManager>();
         }
     }
 }

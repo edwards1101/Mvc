@@ -28,19 +28,8 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
 
             foreach (var controllerModel in context.Result.Controllers)
             {
-
-                var modelType = controllerModel.ControllerType.AsType();
-                var tempDataProperties = SaveTempDataPropertyFilterBase.GetTempDataProperties(modelType);
-
-                if (tempDataProperties != null)
-                {
-                    var factory = new ControllerSaveTempDataPropertyFilterFactory()
-                    {
-                        TempDataProperties = tempDataProperties
-                    };
-
-                    controllerModel.Filters.Add(factory);
-                }
+                var factory = new ControllerSaveTempDataPropertyFilterFactory();
+                controllerModel.Filters.Add(factory);
             }
         }
     }

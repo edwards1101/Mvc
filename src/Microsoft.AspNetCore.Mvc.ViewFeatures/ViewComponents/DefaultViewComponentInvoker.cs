@@ -22,6 +22,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
         private readonly ViewComponentInvokerCache _viewComponentInvokerCache;
         private readonly DiagnosticSource _diagnosticSource;
         private readonly ILogger _logger;
+        private readonly IPropertyLifetimeThingie _propertyLifetimeThingie;
 
         /// <summary>
         /// Initializes a new instance of <see cref="DefaultViewComponentInvoker"/>.
@@ -29,11 +30,13 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
         /// <param name="viewComponentFactory">The <see cref="IViewComponentFactory"/>.</param>
         /// <param name="viewComponentInvokerCache">The <see cref="ViewComponentInvokerCache"/>.</param>
         /// <param name="diagnosticSource">The <see cref="DiagnosticSource"/>.</param>
+        /// <param name="propertyLifetimeThingie"></param>
         /// <param name="logger">The <see cref="ILogger"/>.</param>
         public DefaultViewComponentInvoker(
             IViewComponentFactory viewComponentFactory,
             ViewComponentInvokerCache viewComponentInvokerCache,
             DiagnosticSource diagnosticSource,
+            IPropertyLifetimeThingie propertyLifetimeThingie,
             ILogger logger)
         {
             if (viewComponentFactory == null)
@@ -60,6 +63,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             _viewComponentInvokerCache = viewComponentInvokerCache;
             _diagnosticSource = diagnosticSource;
             _logger = logger;
+            _propertyLifetimeThingie = propertyLifetimeThingie;
         }
 
         /// <inheritdoc />
@@ -79,25 +83,29 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
                 throw new InvalidOperationException(Resources.ViewComponent_MustReturnValue);
             }
 
+            var component = _viewComponentFactory.CreateViewComponent(context);
+            var lifetimeContext = new PropertyLifetimeContext(context.TempData, context.ViewData);
+
+            _propertyLifetimeThingie.Init(component, lifetimeContext);
+
             IViewComponentResult result;
             if (executor.IsMethodAsync)
             {
-                result = await InvokeAsyncCore(executor, context);
+                result = await InvokeAsyncCore(executor, context, component);
             }
             else
             {
                 // We support falling back to synchronous if there is no InvokeAsync method, in this case we'll still
                 // execute the IViewResult asynchronously.
-                result = InvokeSyncCore(executor, context);
+                result = InvokeSyncCore(executor, context, component);
             }
+            _propertyLifetimeThingie.Save(component, lifetimeContext);
 
             await result.ExecuteAsync(context);
         }
 
-        private async Task<IViewComponentResult> InvokeAsyncCore(ObjectMethodExecutor executor, ViewComponentContext context)
+        private async Task<IViewComponentResult> InvokeAsyncCore(ObjectMethodExecutor executor, ViewComponentContext context, object component)
         {
-            var component = _viewComponentFactory.CreateViewComponent(context);
-
             using (_logger.ViewComponentScope(context))
             {
                 var arguments = PrepareArguments(context.Arguments, executor);
@@ -137,10 +145,8 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             }
         }
 
-        private IViewComponentResult InvokeSyncCore(ObjectMethodExecutor executor, ViewComponentContext context)
+        private IViewComponentResult InvokeSyncCore(ObjectMethodExecutor executor, ViewComponentContext context, object component)
         {
-            var component = _viewComponentFactory.CreateViewComponent(context);
-
             using (_logger.ViewComponentScope(context))
             {
                 var arguments = PrepareArguments(context.Arguments, executor);
@@ -177,20 +183,17 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
                 throw new InvalidOperationException(Resources.ViewComponent_MustReturnValue);
             }
 
-            var componentResult = value as IViewComponentResult;
-            if (componentResult != null)
+            if (value is IViewComponentResult componentResult)
             {
                 return componentResult;
             }
 
-            var stringResult = value as string;
-            if (stringResult != null)
+            if (value is string stringResult)
             {
                 return new ContentViewComponentResult(stringResult);
             }
 
-            var htmlContent = value as IHtmlContent;
-            if (htmlContent != null)
+            if (value is IHtmlContent htmlContent)
             {
                 return new HtmlContentViewComponentResult(htmlContent);
             }

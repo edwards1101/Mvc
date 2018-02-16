@@ -13,6 +13,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
 {
     public class ViewDataDictionaryControllerPropertyActivator : IControllerPropertyActivator
     {
+        internal static object ViewDataKey = new object();
         private readonly Func<Type, PropertyActivator<ControllerContext>[]> _getPropertiesToActivate;
         private readonly IModelMetadataProvider _modelMetadataProvider;
         private ConcurrentDictionary<Type, PropertyActivator<ControllerContext>[]> _activateActions;
@@ -81,9 +82,16 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
 
         private ViewDataDictionary GetViewDataDictionary(ControllerContext context)
         {
-            return new ViewDataDictionary(
-                _modelMetadataProvider,
-                context.ModelState);
+            if (!(context.HttpContext.Items[ViewDataKey] is ViewDataDictionary viewData))
+            {
+                viewData = new ViewDataDictionary(
+                    _modelMetadataProvider,
+                    context.ModelState);
+
+                context.HttpContext.Items[ViewDataKey] = viewData;
+            }
+
+            return viewData;
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
     {
         private readonly IViewComponentFactory _viewComponentFactory;
         private readonly ViewComponentInvokerCache _viewComponentInvokerCache;
+        private readonly IPropertyLifetimeThingie _thingie;
         private readonly ILogger _logger;
         private readonly DiagnosticSource _diagnosticSource;
 
@@ -19,6 +20,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             IViewComponentFactory viewComponentFactory,
             ViewComponentInvokerCache viewComponentInvokerCache,
             DiagnosticSource diagnosticSource,
+            IPropertyLifetimeThingie thingie,
             ILoggerFactory loggerFactory)
         {
             if (viewComponentFactory == null)
@@ -44,6 +46,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             _viewComponentFactory = viewComponentFactory;
             _diagnosticSource = diagnosticSource;
             _viewComponentInvokerCache = viewComponentInvokerCache;
+            _thingie = thingie;
 
             _logger = loggerFactory.CreateLogger<DefaultViewComponentInvoker>();
         }
@@ -63,6 +66,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
                 _viewComponentFactory,
                 _viewComponentInvokerCache,
                 _diagnosticSource,
+                _thingie,
                 _logger);
         }
     }

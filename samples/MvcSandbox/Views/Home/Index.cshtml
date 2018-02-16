@@ -1,5 +1,13 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@functions
+{
+    [ViewData]
+    public string ViewDataMessage { get; set; }
+
+    [TempData]
+    public string Stuff { get; set; }
+
+    [ViewData]
+    public string Title { get; set; } = "Home Page";
 }
 
 <div class="row">
@@ -7,6 +15,8 @@
         <h2>Sandbox</h2>
         <ul>
             <li>This sandbox should give you a quick view of a basic MVC application.</li>
+            <li>@ViewDataMessage</li>
+            <li>@Stuff</li>
         </ul>
     </div>
 </div>
