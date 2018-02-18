@@ -23,7 +23,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
         public void AddsTempDataPropertyFilter_ForTempDataAttributeProperties(Type type)
         {
             // Arrange
-            var provider = new TempDataApplicationModelProvider();
+            var provider = new ControllerSourceBoundPropertyFilterApplicationManager();
             var defaultProvider = new DefaultApplicationModelProvider(Options.Create(new MvcOptions()));
 
             var context = new ApplicationModelProviderContext(new[] { type.GetTypeInfo() });
@@ -34,14 +34,14 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
 
             // Assert
             var controller = Assert.Single(context.Result.Controllers);
-            Assert.Single(controller.Filters, f => f is ControllerSaveTempDataPropertyFilterFactory);
+            Assert.Single(controller.Filters, f => f is SourceBoundControllerPropertyFilterFactory);
         }
 
         [Fact]
         public void InitializeFilterFactory_WithExpectedPropertyHelpers_ForTempDataAttributeProperties()
         {
             // Arrange
-            var provider = new TempDataApplicationModelProvider();
+            var provider = new ControllerSourceBoundPropertyFilterApplicationManager();
             var defaultProvider = new DefaultApplicationModelProvider(Options.Create(new MvcOptions()));
 
             var context = new ApplicationModelProviderContext(new[] { typeof(TestController_OneTempDataProperty).GetTypeInfo() });
@@ -50,7 +50,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
             // Act
             provider.OnProvidersExecuting(context);
             var controller = context.Result.Controllers.SingleOrDefault();
-            var filter = controller.Filters.OfType<ControllerSaveTempDataPropertyFilterFactory>();
+            var filter = controller.Filters.OfType<SourceBoundControllerPropertyFilterFactory>();
             var saveTempDataPropertyFilterFactory = filter.SingleOrDefault();
             var expected = typeof(TestController_OneTempDataProperty).GetProperty(nameof(TestController_OneTempDataProperty.Test2));
 
@@ -64,7 +64,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
         public void ThrowsInvalidOperationException_PrivateSetter()
         {
             // Arrange
-            var provider = new TempDataApplicationModelProvider();
+            var provider = new ControllerSourceBoundPropertyFilterApplicationManager();
             var defaultProvider = new DefaultApplicationModelProvider(Options.Create(new MvcOptions()));
 
             var context = new ApplicationModelProviderContext(new[] { typeof(TestController_PrivateSet).GetTypeInfo() });
@@ -85,7 +85,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
         public void ThrowsInvalidOperationException_NonPrimitiveType()
         {
             // Arrange
-            var provider = new TempDataApplicationModelProvider();
+            var provider = new ControllerSourceBoundPropertyFilterApplicationManager();
             var defaultProvider = new DefaultApplicationModelProvider(Options.Create(new MvcOptions()));
 
             var context = new ApplicationModelProviderContext(new[] { typeof(TestController_NonPrimitiveType).GetTypeInfo() });
@@ -106,7 +106,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
         public void ThrowsInvalidOperationException_NonStringDictionaryKey()
         {
             // Arrange
-            var provider = new TempDataApplicationModelProvider();
+            var provider = new ControllerSourceBoundPropertyFilterApplicationManager();
             var defaultProvider = new DefaultApplicationModelProvider(Options.Create(new MvcOptions()));
 
             var context = new ApplicationModelProviderContext(

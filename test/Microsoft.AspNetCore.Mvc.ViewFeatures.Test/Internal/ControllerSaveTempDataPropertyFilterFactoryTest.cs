@@ -14,7 +14,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
         public void CreateInstance_CreatesFilter()
         {
             // Arrange
-            var factory = new ControllerSaveTempDataPropertyFilterFactory();
+            var factory = new SourceBoundControllerPropertyFilterFactory();
             var propertyInfo = typeof(StringController).GetProperty("StringProp");
 
             factory.TempDataProperties = new List<TempDataProperty>()
@@ -27,7 +27,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
 
             // Assert
             Assert.Collection(
-                Assert.IsType<ControllerSaveTempDataPropertyFilter>(filter).Properties,
+                Assert.IsType<ControllerSourceBoundPropertyFilter>(filter).Properties,
                 property => Assert.Equal(propertyInfo, property.PropertyInfo));
         }
 
@@ -37,7 +37,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
 
             serviceCollection.AddSingleton(Mock.Of<ITempDataProvider>());
             serviceCollection.AddSingleton<ITempDataDictionaryFactory, TempDataDictionaryFactory>();
-            serviceCollection.AddTransient<ControllerSaveTempDataPropertyFilter>();
+            serviceCollection.AddTransient<ControllerSourceBoundPropertyFilter>();
 
             return serviceCollection.BuildServiceProvider();
         }

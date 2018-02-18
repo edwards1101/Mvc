@@ -438,7 +438,7 @@ namespace Microsoft.AspNetCore.Mvc
                             typeof(DefaultApplicationModelProvider),
                             typeof(CorsApplicationModelProvider),
                             typeof(AuthorizationApplicationModelProvider),
-                            typeof(TempDataApplicationModelProvider),
+                            typeof(SourceBoundPropertyFilterApplicationManager),
                             typeof(ApiBehaviorApplicationModelProvider),
                         }
                     },

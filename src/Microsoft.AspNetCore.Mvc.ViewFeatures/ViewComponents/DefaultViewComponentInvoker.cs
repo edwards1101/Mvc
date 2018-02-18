@@ -22,7 +22,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
         private readonly ViewComponentInvokerCache _viewComponentInvokerCache;
         private readonly DiagnosticSource _diagnosticSource;
         private readonly ILogger _logger;
-        private readonly IPropertyLifetimeThingie _propertyLifetimeThingie;
+        private readonly ISourceBoundPropertyManager _propertyManager;
 
         /// <summary>
         /// Initializes a new instance of <see cref="DefaultViewComponentInvoker"/>.
@@ -30,13 +30,13 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
         /// <param name="viewComponentFactory">The <see cref="IViewComponentFactory"/>.</param>
         /// <param name="viewComponentInvokerCache">The <see cref="ViewComponentInvokerCache"/>.</param>
         /// <param name="diagnosticSource">The <see cref="DiagnosticSource"/>.</param>
-        /// <param name="propertyLifetimeThingie"></param>
         /// <param name="logger">The <see cref="ILogger"/>.</param>
+        [Obsolete("This constructor is obsolete and will be removed in a future version.")]
+        // Clean up null checks for propertyManager in InvokeAsync when this constructor is removed.
         public DefaultViewComponentInvoker(
             IViewComponentFactory viewComponentFactory,
             ViewComponentInvokerCache viewComponentInvokerCache,
             DiagnosticSource diagnosticSource,
-            IPropertyLifetimeThingie propertyLifetimeThingie,
             ILogger logger)
         {
             if (viewComponentFactory == null)
@@ -63,7 +63,28 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             _viewComponentInvokerCache = viewComponentInvokerCache;
             _diagnosticSource = diagnosticSource;
             _logger = logger;
-            _propertyLifetimeThingie = propertyLifetimeThingie;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="DefaultViewComponentInvoker"/>.
+        /// </summary>
+        /// <param name="viewComponentFactory">The <see cref="IViewComponentFactory"/>.</param>
+        /// <param name="viewComponentInvokerCache">The <see cref="ViewComponentInvokerCache"/>.</param>
+        /// <param name="propertyManager">The <see cref="ISourceBoundPropertyManager"/>.</param>
+        /// <param name="diagnosticSource">The <see cref="DiagnosticSource"/>.</param>
+        /// <param name="logger">The <see cref="ILogger"/>.</param>
+        public DefaultViewComponentInvoker(
+            IViewComponentFactory viewComponentFactory,
+            ViewComponentInvokerCache viewComponentInvokerCache,
+            ISourceBoundPropertyManager propertyManager,
+            DiagnosticSource diagnosticSource,
+            ILogger logger)
+        {
+            _viewComponentFactory = viewComponentFactory ?? throw new ArgumentNullException(nameof(viewComponentFactory));
+            _viewComponentInvokerCache = viewComponentInvokerCache ?? throw new ArgumentNullException(nameof(viewComponentInvokerCache));
+            _diagnosticSource = diagnosticSource ?? throw new ArgumentNullException(nameof(diagnosticSource));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _propertyManager = propertyManager ?? throw new ArgumentNullException(nameof(propertyManager));
         }
 
         /// <inheritdoc />
@@ -84,9 +105,10 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             }
 
             var component = _viewComponentFactory.CreateViewComponent(context);
-            var lifetimeContext = new PropertyLifetimeContext(context.TempData, context.ViewData);
 
-            _propertyLifetimeThingie.Init(component, lifetimeContext);
+            var propertyContext = new SourceBoundPropertyContext(context.ViewContext, context.TempData, context.ViewData);
+            // _propertyManager may be null when invoked from legacy constructor.
+            _propertyManager?.Populate(component, propertyContext);
 
             IViewComponentResult result;
             if (executor.IsMethodAsync)
@@ -99,7 +121,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
                 // execute the IViewResult asynchronously.
                 result = InvokeSyncCore(executor, context, component);
             }
-            _propertyLifetimeThingie.Save(component, lifetimeContext);
+            _propertyManager?.Save(component, propertyContext);
 
             await result.ExecuteAsync(context);
         }

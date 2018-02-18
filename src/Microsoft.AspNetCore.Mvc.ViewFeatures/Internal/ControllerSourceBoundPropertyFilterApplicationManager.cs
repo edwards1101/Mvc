@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.Mvc.Internal;
 
 namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
 {
-    public class TempDataApplicationModelProvider : IApplicationModelProvider
+    internal class ControllerSourceBoundPropertyFilterApplicationManager : IApplicationModelProvider
     {
         /// <inheritdoc />
-        /// <remarks>This order ensures that <see cref="TempDataApplicationModelProvider"/> runs after the <see cref="DefaultApplicationModelProvider"/>.</remarks>
+        /// <remarks>This order ensures that <see cref="ControllerSourceBoundPropertyFilterApplicationManager"/> runs after 
+        /// the <see cref="DefaultApplicationModelProvider"/>.</remarks>
         public int Order => -1000 + 10;
 
         /// <inheritdoc />
@@ -26,9 +27,12 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures.Internal
                 throw new ArgumentNullException(nameof(context));
             }
 
+            var factory = new ServiceFilterAttribute(typeof(ControllerSourceBoundPropertyFilter))
+            {
+                IsReusable = true,
+            };
             foreach (var controllerModel in context.Result.Controllers)
             {
-                var factory = new ControllerSaveTempDataPropertyFilterFactory();
                 controllerModel.Filters.Add(factory);
             }
         }

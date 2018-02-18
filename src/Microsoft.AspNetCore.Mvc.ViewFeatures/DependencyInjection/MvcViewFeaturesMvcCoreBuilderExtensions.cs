@@ -157,6 +157,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 ServiceDescriptor
                     .Transient<IControllerPropertyActivator, ViewDataDictionaryControllerPropertyActivator>());
 
+            // Support for ViewDataAttribute and TempDataAttribute
+            services.TryAddSingleton<ISourceBoundPropertyManager, SourceBoundPropertyManager>();
+            services.TryAddSingleton<SourceBoundPropertyCache>();
+
             //
             // HTML Helper
             //
@@ -200,11 +204,11 @@ namespace Microsoft.Extensions.DependencyInjection
             // Temp Data
             //
             services.TryAddEnumerable(
-                ServiceDescriptor.Transient<IApplicationModelProvider, TempDataApplicationModelProvider>());
+                ServiceDescriptor.Transient<IApplicationModelProvider, ControllerSourceBoundPropertyFilterApplicationManager>());
             services.TryAddSingleton<SaveTempDataFilter>();
 
 
-            services.TryAddTransient<ControllerSaveTempDataPropertyFilter>();
+            services.TryAddTransient<ControllerSourceBoundPropertyFilter>();
 
             // This does caching so it should stay singleton
             services.TryAddSingleton<ITempDataProvider, CookieTempDataProvider>();
@@ -219,8 +223,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<ITempDataDictionaryFactory, TempDataDictionaryFactory>();
             services.TryAddSingleton(ArrayPool<ViewBufferValue>.Shared);
             services.TryAddScoped<IViewBufferScope, MemoryPoolViewBufferScope>();
-
-            services.TryAddScoped<IPropertyLifetimeThingie, PropertyLifetimeManager>();
         }
     }
 }

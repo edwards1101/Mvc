@@ -10,6 +10,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.Language;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
 
         private readonly IRazorPageFactoryProvider _pageFactory;
         private readonly IRazorPageActivator _pageActivator;
+        private readonly ISourceBoundPropertyManager _propertyManager;
         private readonly HtmlEncoder _htmlEncoder;
         private readonly ILogger _logger;
         private readonly RazorViewEngineOptions _options;
@@ -90,6 +92,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         public RazorViewEngine(
             IRazorPageFactoryProvider pageFactory,
             IRazorPageActivator pageActivator,
+            ISourceBoundPropertyManager propertyManager,
             HtmlEncoder htmlEncoder,
             IOptions<RazorViewEngineOptions> optionsAccessor,
             RazorProjectFileSystem razorFileSystem,
@@ -99,6 +102,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
             : this (pageFactory, pageActivator, htmlEncoder, optionsAccessor, (RazorProject)razorFileSystem, loggerFactory, diagnosticSource)
 #pragma warning restore CS0618 // Type or member is obsolete
         {
+            _propertyManager = propertyManager;
         }
 
         /// <summary>
@@ -499,7 +503,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
                 viewStarts[i] = viewStartItem.PageFactory();
             }
 
-            var view = new RazorView(this, _pageActivator, viewStarts, page, _htmlEncoder, _diagnosticSource);
+            var view = new RazorView(this, _pageActivator, _propertyManager, viewStarts, page, _htmlEncoder, _diagnosticSource);
             return ViewEngineResult.Found(viewName, view);
         }
 

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures.Internal;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace Microsoft.AspNetCore.Mvc.Razor
 {
@@ -25,8 +26,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         private readonly IRazorPageActivator _pageActivator;
         private readonly HtmlEncoder _htmlEncoder;
         private readonly DiagnosticSource _diagnosticSource;
-        private IPropertyLifetimeThingie _propertyLifetimeThingie;
-        private PropertyLifetimeContext _propertyLifetimeContext;
+        private ISourceBoundPropertyManager _propertyManager;
         private IViewBufferScope _bufferScope;
 
         /// <summary>
@@ -39,6 +39,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         /// <param name="razorPage">The <see cref="IRazorPage"/> instance to execute.</param>
         /// <param name="htmlEncoder">The HTML encoder.</param>
         /// <param name="diagnosticSource">The <see cref="DiagnosticSource"/>.</param>
+        [Obsolete("This constructor is obsolete and will be removed in a future version.")]
         public RazorView(
             IRazorViewEngine viewEngine,
             IRazorPageActivator pageActivator,
@@ -85,6 +86,24 @@ namespace Microsoft.AspNetCore.Mvc.Razor
             _diagnosticSource = diagnosticSource;
         }
 
+        public RazorView(
+            IRazorViewEngine viewEngine,
+            IRazorPageActivator pageActivator,
+            ISourceBoundPropertyManager propertyManager,
+            IReadOnlyList<IRazorPage> viewStartPages,
+            IRazorPage razorPage,
+            HtmlEncoder htmlEncoder,
+            DiagnosticSource diagnosticSource)
+        {
+            _viewEngine = viewEngine ?? throw new ArgumentNullException(nameof(viewEngine));
+            _pageActivator = pageActivator ?? throw new ArgumentNullException(nameof(pageActivator));
+            _propertyManager = propertyManager ?? throw new ArgumentNullException(nameof(propertyManager));
+            ViewStartPages = viewStartPages ?? throw new ArgumentNullException(nameof(viewStartPages));
+            RazorPage = razorPage ?? throw new ArgumentNullException(nameof(razorPage));
+            _htmlEncoder = htmlEncoder ?? throw new ArgumentNullException(nameof(htmlEncoder));
+            _diagnosticSource = diagnosticSource ?? throw new ArgumentNullException(nameof(diagnosticSource));
+        }
+
         /// <inheritdoc />
         public string Path => RazorPage.Path;
 
@@ -106,14 +125,11 @@ namespace Microsoft.AspNetCore.Mvc.Razor
                 throw new ArgumentNullException(nameof(context));
             }
 
-            _propertyLifetimeContext = new PropertyLifetimeContext(context.TempData, context.ViewData);
-
             // This GetRequiredService call is by design. ViewBufferScope is a scoped service, RazorViewEngine
             // is the component responsible for creating RazorViews and it is a Singleton service. It doesn't
             // have access to the RequestServices so requiring the service when we render the page is the best
             // we can do.
             _bufferScope = context.HttpContext.RequestServices.GetRequiredService<IViewBufferScope>();
-            _propertyLifetimeThingie = context.HttpContext.RequestServices.GetRequiredService<IPropertyLifetimeThingie>();
 
             var bodyWriter = await RenderPageAsync(RazorPage, context, invokeViewStarts: true);
             await RenderLayoutAsync(context, bodyWriter);
@@ -172,7 +188,9 @@ namespace Microsoft.AspNetCore.Mvc.Razor
         {
             page.ViewContext = context;
             _pageActivator.Activate(page, context);
-            _propertyLifetimeThingie.Init(page, _propertyLifetimeContext);
+
+            var propertyContext = new SourceBoundPropertyContext(context, context.TempData, context.ViewData);
+            _propertyManager?.Populate(page, propertyContext);
 
             _diagnosticSource.BeforeViewPage(page, context);
 
@@ -185,7 +203,7 @@ namespace Microsoft.AspNetCore.Mvc.Razor
                 _diagnosticSource.AfterViewPage(page, context);
             }
 
-            _propertyLifetimeThingie.Save(page, _propertyLifetimeContext);
+            _propertyManager?.Save(page, propertyContext);
         }
 
         private async Task RenderViewStartsAsync(ViewContext context)

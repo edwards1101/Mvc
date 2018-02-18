@@ -146,19 +146,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 IRazorViewEngineFileProviderAccessor,
                 DefaultRazorViewEngineFileProviderAccessor>();
 
-            services.TryAddSingleton<IRazorViewEngine>(s =>
-            {
-                var pageFactory = s.GetRequiredService<IRazorPageFactoryProvider>();
-                var pageActivator = s.GetRequiredService<IRazorPageActivator>();
-                var htmlEncoder = s.GetRequiredService<HtmlEncoder>();
-                var optionsAccessor = s.GetRequiredService<IOptions<RazorViewEngineOptions>>();
-                var razorFileSystem = s.GetRequiredService<RazorProjectFileSystem>();
-                var loggerFactory = s.GetRequiredService<ILoggerFactory>();
-                var diagnosticSource = s.GetRequiredService<DiagnosticSource>();
-
-                var viewEngine = new RazorViewEngine(pageFactory, pageActivator, htmlEncoder, optionsAccessor, razorFileSystem, loggerFactory, diagnosticSource);
-                return viewEngine;
-            });
+            services.TryAddSingleton<IRazorViewEngine, RazorViewEngine>();
             services.TryAddSingleton<IViewCompilerProvider, RazorViewCompilerProvider>();
 
             // In the default scenario the following services are singleton by virtue of being initialized as part of

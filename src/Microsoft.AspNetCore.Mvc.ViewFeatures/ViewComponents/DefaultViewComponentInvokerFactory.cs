@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc.ViewFeatures.Internal;
 using Microsoft.Extensions.Logging;
 
@@ -12,15 +13,15 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
     {
         private readonly IViewComponentFactory _viewComponentFactory;
         private readonly ViewComponentInvokerCache _viewComponentInvokerCache;
-        private readonly IPropertyLifetimeThingie _thingie;
+        private readonly ISourceBoundPropertyManager _propertyManager;
         private readonly ILogger _logger;
         private readonly DiagnosticSource _diagnosticSource;
 
+        [Obsolete("This constructor is obsolete and will be removed in a future version.")]
         public DefaultViewComponentInvokerFactory(
             IViewComponentFactory viewComponentFactory,
             ViewComponentInvokerCache viewComponentInvokerCache,
             DiagnosticSource diagnosticSource,
-            IPropertyLifetimeThingie thingie,
             ILoggerFactory loggerFactory)
         {
             if (viewComponentFactory == null)
@@ -46,9 +47,22 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             _viewComponentFactory = viewComponentFactory;
             _diagnosticSource = diagnosticSource;
             _viewComponentInvokerCache = viewComponentInvokerCache;
-            _thingie = thingie;
 
             _logger = loggerFactory.CreateLogger<DefaultViewComponentInvoker>();
+        }
+
+        public DefaultViewComponentInvokerFactory(
+            IViewComponentFactory viewComponentFactory,
+            ViewComponentInvokerCache viewComponentInvokerCache,
+            ISourceBoundPropertyManager propertyManager,
+            DiagnosticSource diagnosticSource,
+            ILoggerFactory loggerFactory)
+        {
+            _viewComponentFactory = viewComponentFactory ?? throw new ArgumentNullException(nameof(viewComponentFactory));
+            _viewComponentInvokerCache = viewComponentInvokerCache ?? throw new ArgumentNullException(nameof(viewComponentInvokerCache));
+            _propertyManager = propertyManager ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _diagnosticSource = diagnosticSource ?? throw new ArgumentNullException(nameof(diagnosticSource));
+            _logger = loggerFactory?.CreateLogger<DefaultViewComponentInvoker>() ?? throw new ArgumentNullException(nameof(loggerFactory));
         }
 
         /// <inheritdoc />
@@ -66,7 +80,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
                 _viewComponentFactory,
                 _viewComponentInvokerCache,
                 _diagnosticSource,
-                _thingie,
+                _propertyManager,
                 _logger);
         }
     }
