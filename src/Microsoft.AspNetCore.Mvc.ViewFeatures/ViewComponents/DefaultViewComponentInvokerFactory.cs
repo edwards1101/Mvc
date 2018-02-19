@@ -79,8 +79,8 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
             return new DefaultViewComponentInvoker(
                 _viewComponentFactory,
                 _viewComponentInvokerCache,
-                _diagnosticSource,
                 _propertyManager,
+                _diagnosticSource,
                 _logger);
         }
     }

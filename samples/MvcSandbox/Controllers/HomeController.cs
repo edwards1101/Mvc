@@ -19,7 +19,7 @@ namespace MvcSandbox.Controllers
 
         public IActionResult Index()
         {
-            ViewDataMessage = "Stuff says " + Stuff;
+            ViewData["old fashioned"] = "hello the old fashioned way";
             Stuff = "Time is now " + DateTime.Now;
             return View();
         }

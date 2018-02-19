@@ -1,22 +1,12 @@
-﻿@functions
-{
-    [ViewData]
-    public string ViewDataMessage { get; set; }
-
-    [TempData]
-    public string Stuff { get; set; }
-
-    [ViewData]
-    public string Title { get; set; } = "Home Page";
-}
+﻿@viewdata Title "Hello from ViewData directive"
 
 <div class="row">
     <div class="col-md-3">
         <h2>Sandbox</h2>
         <ul>
             <li>This sandbox should give you a quick view of a basic MVC application.</li>
-            <li>@ViewDataMessage</li>
-            <li>@Stuff</li>
+            <li>@Title</li>
+            <li>@ViewData["old fashioned"]</li>
         </ul>
     </div>
 </div>

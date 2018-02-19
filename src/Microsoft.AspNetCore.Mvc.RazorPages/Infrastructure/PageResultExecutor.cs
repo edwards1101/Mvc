@@ -21,6 +21,7 @@ namespace Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure
         private readonly IRazorPageActivator _razorPageActivator;
         private readonly DiagnosticSource _diagnosticSource;
         private readonly HtmlEncoder _htmlEncoder;
+        private readonly ISourceBoundPropertyManager _propertyManager;
 
         /// <summary>
         /// Creates a new <see cref="PageResultExecutor"/>.
@@ -29,6 +30,7 @@ namespace Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure
         /// <param name="compositeViewEngine">The <see cref="ICompositeViewEngine"/>.</param>
         /// <param name="razorViewEngine">The <see cref="IRazorViewEngine"/>.</param>
         /// <param name="razorPageActivator">The <see cref="IRazorPageActivator"/>.</param>
+        /// <param name="propertyManager"></param>
         /// <param name="diagnosticSource">The <see cref="DiagnosticSource"/>.</param>
         /// <param name="htmlEncoder">The <see cref="HtmlEncoder"/>.</param>
         public PageResultExecutor(
@@ -36,12 +38,14 @@ namespace Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure
             ICompositeViewEngine compositeViewEngine,
             IRazorViewEngine razorViewEngine,
             IRazorPageActivator razorPageActivator,
+            ISourceBoundPropertyManager propertyManager,
             DiagnosticSource diagnosticSource,
             HtmlEncoder htmlEncoder)
             : base(writerFactory, compositeViewEngine, diagnosticSource)
         {
             _razorViewEngine = razorViewEngine;
             _htmlEncoder = htmlEncoder;
+            _propertyManager = propertyManager;
             _razorPageActivator = razorPageActivator;
             _diagnosticSource = diagnosticSource;
         }
@@ -76,6 +80,7 @@ namespace Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure
             viewContext.View = new RazorView(
                 _razorViewEngine,
                 _razorPageActivator,
+                _propertyManager,
                 viewStarts,
                 new RazorPageAdapter(result.Page),
                 _htmlEncoder,
